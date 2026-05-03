@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EdZola — MIS, CRM & AI Solutions for Nonprofits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  html, body, #root { height: 100%; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #000;
+    color: #fff;
+    margin: 0;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @keyframes blurFadeUp {
+    from { opacity: 0; filter: blur(20px); transform: translateY(40px); }
+    to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+  }
+  .animate-blur-fade-up {
+    opacity: 0;
+    animation: blurFadeUp 1s ease-out forwards;
+  }
+
+  /* re-trigger animation on key change */
+  @keyframes contentSwap {
+    from { opacity: 0; filter: blur(14px); transform: translateY(18px); }
+    to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+  }
+  .swap-in {
+    animation: contentSwap 700ms ease-out forwards;
+  }
+
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.01);
+    background-blend-mode: luminosity;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    border: none;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    transition: background-color 200ms ease;
+  }
+  .liquid-glass:hover { background: rgba(255, 255, 255, 0.06); }
+  .liquid-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 255, 255, 0.15) 20%,
+      rgba(255, 255, 255, 0) 40%,
+      rgba(255, 255, 255, 0) 60%,
+      rgba(255, 255, 255, 0.15) 80%,
+      rgba(255, 255, 255, 0.45) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .bottom-blur-overlay {
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    -webkit-mask-image: linear-gradient(to top, black 0%, transparent 45%);
+    mask-image: linear-gradient(to top, black 0%, transparent 45%);
+  }
+
+  ::-webkit-scrollbar { display: none; }
+
+  /* Compact rhythm for short viewports so the hero fits w/o scroll */
+  @media (max-height: 820px) {
+    .hero-shell { padding-bottom: 1.25rem !important; }
+    .hero-title { font-size: clamp(1.75rem, 4.2vh, 3.25rem) !important; line-height: 1.05 !important; }
+    .hero-desc { font-size: 0.95rem !important; line-height: 1.45 !important; margin-bottom: 1.25rem !important; }
+    .hero-meta { margin-bottom: 1rem !important; }
+    .hero-eyebrow-wrap { margin-bottom: 0.5rem !important; }
+    .hero-title { margin-bottom: 0.75rem !important; }
+    .nav-shell { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+  }
+  @media (max-height: 640px) {
+    .hero-title { font-size: clamp(1.5rem, 4vh, 2.5rem) !important; }
+    .hero-desc { font-size: 0.875rem !important; margin-bottom: 1rem !important; }
+    .hero-meta { gap: 0.75rem !important; margin-bottom: 0.75rem !important; font-size: 0.7rem !important; }
+    .hero-cta { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; font-size: 0.8125rem !important; }
+    .hero-shell { padding-bottom: 0.75rem !important; }
+    .nav-shell { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+/* ---------- Inline Lucide-style icons (stroke=currentColor) ---------- */
+function Icon({ size = 24, strokeWidth = 2, className = "", style, fill = "none", children, ...rest }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+      fill={fill} stroke="currentColor" strokeWidth={strokeWidth}
+      strokeLinecap="round" strokeLinejoin="round"
+      className={className} style={style} aria-hidden="true" {...rest}>
+      {children}
+    </svg>
+  );
+}
+const Search = (p) => (<Icon {...p}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></Icon>);
+const User = (p) => (<Icon {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Icon>);
+const Menu = (p) => (<Icon {...p}><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" /></Icon>);
+const X = (p) => (<Icon {...p}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></Icon>);
+const Globe = (p) => (<Icon {...p}><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></Icon>);
+const Users = (p) => (<Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>);
+const ShieldCheck = ({ className = "", ...p }) => {
+  const filled = /\bfill-(white|black|current)\b/.test(className);
+  return (
+    <Icon {...p} className={className} fill={filled ? "currentColor" : "none"}>
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+      <path d="m9 12 2 2 4-4"/>
+    </Icon>
+  );
+};
+const ArrowRight = (p) => (<Icon {...p}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></Icon>);
+const ChevronLeft = (p) => (<Icon {...p}><path d="m15 18-6-6 6-6"/></Icon>);
+const ChevronRight = (p) => (<Icon {...p}><path d="m9 18 6-6-6-6"/></Icon>);
+const Calendar = (p) => (<Icon {...p}><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></Icon>);
+
+/* ---------- Content ---------- */
+const NAV_LINKS = [
+  { label: "About us",        href: "https://www.edzola.com/team" },
+  { label: "Built for Impact", href: "https://www.edzola.com/zoho-for-nonprofits" },
+  { label: "zolabs.ai",       href: "https://www.edzola.com/zolabs" },
+  { label: "impactOS",        href: "https://www.edzola.com/impactos-mis-for-nonprofits" },
+  { label: "Resources",       href: "https://www.edzola.com/blog" },
+];
+
+const PILLARS = [
+  {
+    eyebrow: "Custom MIS for Nonprofits",
+    title: "Replace Spreadsheets with Real-Time Dashboards.",
+    description:
+      "Custom Management Information Systems built on Zoho Creator — beneficiary tracking, attendance, outcome monitoring, and donor reporting in one connected system.",
+    primaryCta: { label: "Book a Free Discovery Call", href: "https://www.edzola.com/contact" },
+    secondaryCta: { label: "Explore impactOS", href: "https://www.edzola.com/impactos-mis-for-nonprofits" },
+  },
+  {
+    eyebrow: "Zoho CRM & Business Apps",
+    title: "Eliminate Data Silos. Unify Donors, Grants & Operations.",
+    description:
+      "We implement and customise Zoho CRM, Zoho One, Books, and People — donor pipelines, grant tracking, automated receipting, and multi-entity reporting tuned to your processes.",
+    primaryCta: { label: "Book a Free Discovery Call", href: "https://www.edzola.com/contact" },
+    secondaryCta: { label: "Explore CRM Solutions", href: "https://www.edzola.com/crm-business-apps" },
+  },
+  {
+    eyebrow: "AI for Nonprofits — zolabs.ai",
+    title: "Voice-First Data Collection. No Apps. No Internet.",
+    description:
+      "zolabs.ai turns simple phone conversations into structured, dashboard-ready insights — built for last-mile environments across nonprofits, healthcare, and education.",
+    primaryCta: { label: "Book a zolabs.ai Demo", href: "https://go.edzola.com/zolabsdemo" },
+    secondaryCta: { label: "Explore zolabs.ai", href: "https://www.zolabs.ai/" },
+  },
+];
+
+/* ---------- Components ---------- */
+function Navbar({ menuOpen, setMenuOpen }) {
+  return (
+    <nav className="nav-shell relative z-50 flex items-center justify-between px-4 sm:px-6 md:px-12 py-4 md:py-6">
+      <a
+        href="https://www.edzola.com"
+        className="animate-blur-fade-up flex items-center gap-2 select-none"
+        style={{ animationDelay: "0ms" }}
+      >
+        <span
+          className="font-semibold tracking-[0.22em] text-white text-base md:text-lg"
+        >
+          EDZOLA
+        </span>
+        <span className="hidden md:inline text-[10px] tracking-[0.2em] uppercase text-white/50 border border-white/15 rounded-full px-2 py-[2px]">
+          Built for Impact
+        </span>
+      </a>
+
+      <div className="hidden lg:flex items-center gap-8">
+        {NAV_LINKS.map((link, i) => (
+          <a key={link.label} href={link.href}
+            className="animate-blur-fade-up text-sm text-white hover:text-gray-300 transition-colors"
+            style={{ animationDelay: `${100 + i * 50}ms` }}>
+            {link.label}
+          </a>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2 sm:gap-3">
+        <a
+          href="https://www.edzola.com/contact"
+          className="animate-blur-fade-up hidden sm:inline-flex items-center gap-2 rounded-full liquid-glass px-4 md:px-6 py-2 text-sm text-white"
+          style={{ animationDelay: "350ms" }}
+        >
+          <Calendar size={16} strokeWidth={1.75} />
+          <span className="relative z-[1]">Book a Call</span>
+        </a>
+
+        <a
+          href="https://www.edzola.com/blog"
+          aria-label="Resources"
+          className="animate-blur-fade-up hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-full liquid-glass text-white"
+          style={{ animationDelay: "400ms" }}
+        >
+          <Search size={18} strokeWidth={1.75} />
+        </a>
+
+        <button type="button" aria-label="Menu" onClick={() => setMenuOpen((v) => !v)}
+          className="animate-blur-fade-up lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-full liquid-glass text-white relative"
+          style={{ animationDelay: "350ms" }}>
+          <span className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out ${menuOpen ? "rotate-180 opacity-0 scale-50" : "rotate-0 opacity-100 scale-100"}`}>
+            <Menu size={18} strokeWidth={1.75} />
+          </span>
+          <span className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out ${menuOpen ? "rotate-0 opacity-100 scale-100" : "-rotate-180 opacity-0 scale-50"}`}>
+            <X size={18} strokeWidth={1.75} />
+          </span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+function MobileMenu({ open }) {
+  return (
+    <div
+      className={`lg:hidden absolute left-0 right-0 top-[72px] z-40 transition-all duration-500 ease-out ${
+        open ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none"
+      }`}
+    >
+      <div className="mx-4 sm:mx-6 rounded-2xl bg-gray-900/95 backdrop-blur-lg border-t border-b border-gray-800 shadow-2xl overflow-hidden">
+        <div className="flex flex-col p-3">
+          {NAV_LINKS.map((link, i) => (
+            <a key={link.label} href={link.href}
+              className={`py-3 px-3 rounded-lg text-white text-sm hover:bg-gray-800/50 transition-all duration-500 ease-out ${open ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"}`}
+              style={{ transitionDelay: open ? `${i * 50}ms` : "0ms" }}>
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <div className="sm:hidden border-t border-gray-800 p-3 flex items-center gap-3">
+          <a href="https://www.edzola.com/contact"
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-full liquid-glass px-4 py-2 text-sm text-white">
+            <Calendar size={16} strokeWidth={1.75} />
+            <span className="relative z-[1]">Book a Call</span>
+          </a>
+          <a href="https://www.edzola.com/blog" aria-label="Resources"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full liquid-glass text-white">
+            <Search size={18} strokeWidth={1.75} />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroContent({ pillarIdx, setPillarIdx }) {
+  const pillar = PILLARS[pillarIdx];
+  const total = PILLARS.length;
+
+  // Reset key for swap-in animation when pillar changes
+  const swapKey = `pillar-${pillarIdx}`;
+
+  return (
+    <main className="hero-shell flex-1 flex flex-col justify-end px-4 sm:px-6 md:px-12 pb-8 md:pb-16 z-10 relative">
+      <div className="flex flex-col md:flex-row items-start md:items-end gap-8">
+        {/* Left side */}
+        <div className="flex-1 min-w-0">
+          {/* Static metadata row (trust signals) */}
+          <div
+            className="hero-meta animate-blur-fade-up flex flex-wrap items-center gap-3 sm:gap-6 mb-6 md:mb-8 text-xs sm:text-sm text-white"
+            style={{ animationDelay: "300ms" }}
+          >
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={1.5} />
+              <span className="font-medium">100+ Organisations</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={1.5} />
+              <span>India · US · UK</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={1.5} />
+              <span>Zoho Advanced Partner</span>
+            </div>
+          </div>
+
+          {/* Eyebrow (changes per pillar) */}
+          <div key={`eyebrow-${swapKey}`} className="hero-eyebrow-wrap swap-in mb-3 md:mb-4">
+            <span className="inline-flex items-center gap-2 text-[11px] sm:text-xs tracking-[0.18em] uppercase text-white/70">
+              <span className="w-6 h-px bg-white/40" />
+              {pillar.eyebrow}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h1
+            key={`title-${swapKey}`}
+            className="hero-title swap-in text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal mb-4 md:mb-6 text-white"
+            style={{ letterSpacing: "-0.04em", textWrap: "balance" }}
+          >
+            {pillar.title}
+          </h1>
+
+          {/* Description */}
+          <p
+            key={`desc-${swapKey}`}
+            className="hero-desc swap-in text-base sm:text-lg md:text-xl text-gray-400 mb-6 md:mb-12 max-w-2xl"
+            style={{ animationDelay: "80ms" }}
+          >
+            {pillar.description}
+          </p>
+
+          {/* CTA buttons */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <a
+              href={pillar.primaryCta.href}
+              key={`cta1-${swapKey}`}
+              className="hero-cta swap-in inline-flex items-center gap-2 rounded-full bg-white text-black font-medium px-6 sm:px-8 py-2.5 sm:py-3 hover:bg-gray-200 transition-colors text-sm sm:text-base"
+              style={{ animationDelay: "160ms" }}
+            >
+              <span>{pillar.primaryCta.label}</span>
+              <ArrowRight size={18} strokeWidth={2} />
+            </a>
+            <a
+              href={pillar.secondaryCta.href}
+              key={`cta2-${swapKey}`}
+              className="hero-cta swap-in inline-flex items-center rounded-full liquid-glass font-medium px-6 sm:px-8 py-2.5 sm:py-3 text-white text-sm sm:text-base"
+              style={{ animationDelay: "220ms" }}
+            >
+              <span className="relative z-[1]">{pillar.secondaryCta.label}</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Right side: pillar nav */}
+        <div className="flex flex-col items-start md:items-end gap-3 self-start md:self-end w-full md:w-auto">
+          {/* Pager indicator */}
+          <div
+            className="animate-blur-fade-up flex items-center gap-3 text-xs text-white/70"
+            style={{ animationDelay: "750ms" }}
+          >
+            <span className="tabular-nums tracking-widest">
+              {String(pillarIdx + 1).padStart(2, "0")}
+              <span className="text-white/30"> / {String(total).padStart(2, "0")}</span>
+            </span>
+            <div className="flex items-center gap-1.5">
+              {PILLARS.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Go to slide ${i + 1}`}
+                  onClick={() => setPillarIdx(i)}
+                  className={`h-[3px] rounded-full transition-all duration-500 ${i === pillarIdx ? "w-8 bg-white" : "w-4 bg-white/30 hover:bg-white/50"}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setPillarIdx((i) => (i - 1 + total) % total)}
+              className="animate-blur-fade-up inline-flex items-center gap-2 rounded-full liquid-glass px-4 sm:px-6 py-2.5 sm:py-3 text-white text-sm sm:text-base"
+              style={{ animationDelay: "800ms" }}
+            >
+              <ChevronLeft size={18} strokeWidth={1.75} />
+              <span className="relative z-[1]">Previous</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPillarIdx((i) => (i + 1) % total)}
+              className="animate-blur-fade-up inline-flex items-center gap-2 rounded-full liquid-glass px-4 sm:px-6 py-2.5 sm:py-3 text-white text-sm sm:text-base"
+              style={{ animationDelay: "900ms" }}
+            >
+              <span className="relative z-[1]">Next</span>
+              <ChevronRight size={18} strokeWidth={1.75} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/* ---------- Tweaks ---------- */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "autoCycle": true,
+  "cycleSeconds": 7,
+  "showPartnerBadge": true,
+  "videoUrl": "https:\/\/d8j0ntlcm91z4.cloudfront.net\/user_38xzZboKViGWJOttwIXH07lWA1P\/hf_20260406_094145_4a271a6c-3869-4f1c-8aa7-aeb0cb227994.mp4"
+}/*EDITMODE-END*/;
+
+function TweaksPanel({ tweaks, setTweak, onClose }) {
+  return (
+    <div className="fixed bottom-6 right-6 w-[280px] z-[100] rounded-2xl bg-gray-900/95 backdrop-blur-lg border border-white/10 shadow-2xl text-white text-sm">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+        <span className="font-medium tracking-wide">Tweaks</span>
+        <button onClick={onClose} className="text-white/60 hover:text-white" aria-label="Close">
+          <X size={16} />
+        </button>
+      </div>
+      <div className="p-4 space-y-4">
+        <label className="flex items-center justify-between">
+          <span className="text-white/80">Auto-cycle pillars</span>
+          <input
+            type="checkbox"
+            checked={!!tweaks.autoCycle}
+            onChange={(e) => setTweak("autoCycle", e.target.checked)}
+            className="accent-white"
+          />
+        </label>
+        <div className={tweaks.autoCycle ? "" : "opacity-40 pointer-events-none"}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-white/80">Cycle interval</span>
+            <span className="text-white/60 tabular-nums">{tweaks.cycleSeconds}s</span>
+          </div>
+          <input
+            type="range"
+            min="3" max="20" step="1"
+            value={tweaks.cycleSeconds}
+            onChange={(e) => setTweak("cycleSeconds", Number(e.target.value))}
+            className="w-full accent-white"
+          />
+        </div>
+        <label className="flex items-center justify-between">
+          <span className="text-white/80">"Built for Impact" badge</span>
+          <input
+            type="checkbox"
+            checked={!!tweaks.showPartnerBadge}
+            onChange={(e) => setTweak("showPartnerBadge", e.target.checked)}
+            className="accent-white"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- App ---------- */
+function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [pillarIdx, setPillarIdx] = useState(0);
+  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+
+  const setTweak = (k, v) => {
+    setTweaks((t) => {
+      const next = { ...t, [k]: v };
+      try {
+        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+      } catch (_) {}
+      return next;
+    });
+  };
+
+  // Edit-mode protocol: register listener BEFORE announcing availability
+  useEffect(() => {
+    const onMsg = (e) => {
+      if (!e?.data || typeof e.data !== "object") return;
+      if (e.data.type === "__activate_edit_mode") setTweaksOpen(true);
+      if (e.data.type === "__deactivate_edit_mode") setTweaksOpen(false);
+    };
+    window.addEventListener("message", onMsg);
+    try { window.parent.postMessage({ type: "__edit_mode_available" }, "*"); } catch (_) {}
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
+
+  const closeTweaks = () => {
+    setTweaksOpen(false);
+    try { window.parent.postMessage({ type: "__edit_mode_dismissed" }, "*"); } catch (_) {}
+  };
+
+  // Auto-cycle pillars
+  useEffect(() => {
+    if (!tweaks.autoCycle) return;
+    const ms = Math.max(2000, (tweaks.cycleSeconds || 7) * 1000);
+    const id = setInterval(() => {
+      setPillarIdx((i) => (i + 1) % PILLARS.length);
+    }, ms);
+    return () => clearInterval(id);
+  }, [tweaks.autoCycle, tweaks.cycleSeconds]);
+
+  // Close mobile menu on resize past lg
+  useEffect(() => {
+    const onResize = () => { if (window.innerWidth >= 1024) setMenuOpen(false); };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  return (
+    <div className="relative w-full h-full bg-black overflow-hidden">
+      <video
+        className="fixed inset-0 w-full h-full object-cover"
+        style={{ zIndex: 0 }}
+        src={tweaks.videoUrl}
+        autoPlay loop muted playsInline
+      />
+      <div className="bottom-blur-overlay fixed inset-0 pointer-events-none" style={{ zIndex: 1 }} />
+
+      <div className="relative z-10 flex flex-col min-h-full h-full">
+        <Navbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+        <MobileMenu open={menuOpen} />
+        <HeroContent pillarIdx={pillarIdx} setPillarIdx={setPillarIdx} />
+      </div>
+
+      {tweaksOpen && (
+        <TweaksPanel tweaks={tweaks} setTweak={setTweak} onClose={closeTweaks} />
+      )}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
